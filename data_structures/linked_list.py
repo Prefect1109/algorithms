@@ -1,16 +1,22 @@
-from typing import Optional
+from typing import Optional, TypeVar, Generic, Union, Iterator
+
+T = TypeVar('T')
 
 
-class Node:
-    def __init__(self, value: int, next_node: Optional["Node"] = None):
+class Node(Generic[T]):
+    def __init__(self, value: T, next_node: Optional["Node[T]"] = None):
         self.value = value
         self.next_node = next_node
 
+    def __str__(self):
+        return str(self.value)
 
-class LinkedList:
 
-    def __init__(self, head: Optional[Node] = None):
+class LinkedList(Generic[T]):
+
+    def __init__(self, head: Optional[Node[T]] = None):
         self.head = head
+        self.size = 1 if head else 0
 
     def __iter__(self):
         current = self.head
@@ -18,26 +24,20 @@ class LinkedList:
             yield current.value
             current = current.next_node
 
-    def __str__(self):
-        string = "["
+    @property
+    def node_iterator(self) -> Iterator[Node[T]]:
+        current = self.head
+        while current:
+            yield current
+            current = current.next_node
 
-        is_empty = True
-        for i in self:
-            string += str(i)
-            string += ", "
-            is_empty = False
-        if not is_empty:
-            string = string[:-2]
-        string += "]"
-        return string
+    def __str__(self):
+        return ' -> '.join(map(str, self))
 
     def __len__(self):
-        len = 0
-        for i in self:
-            len += 1
-        return len
+        return self.size
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Union[slice, int]) -> Union[T, 'LinkedList[T]']:
         if isinstance(key, slice):
             _linked_list = LinkedList()
             start = key.start if key.start else 0
@@ -58,69 +58,60 @@ class LinkedList:
         else:
             raise ValueError("Invalid argument type.")
 
-    def insert(self, node: Node, at_index: Optional[int] = None):
-        current = self.head
-        if current is None:
-            self.head = node
-        elif at_index is None:
-            while current:
-                if current.next_node is None:
-                    current.next_node = node
-                    break
-                current = current.next_node
-        elif at_index > len(self) - 1:
+    def insert(self, node: Node[T], at_index: Optional[int] = None) -> None:
+
+        if at_index is not None and at_index > len(self):
             raise ValueError("Index out of range")
-        elif at_index == 0:
-            node.next_node = current
+
+        if at_index is None:
+            at_index = len(self)
+
+        self.size += 1
+
+        if self.head is None:
             self.head = node
-        else:
-            index = 0
-            while current:
-                if index + 1 == at_index:
-                    node.next_node = current.next_node
-                    current.next_node = node
-                    break
-                current = current.next_node
-                index += 1
+            return
+
+        if at_index == 0:
+            node.next_node = self.head
+            self.head = node
+            return
+
+        for idx, current_node in enumerate(self.node_iterator):
+            if idx + 1 == at_index:
+                node.next_node = current_node.next_node
+                current_node.next_node = node
+                return
 
     def search(self, value: int, start_index: int = 0) -> int:
-        search_source = self[start_index:]
-        for index, node_value in enumerate(search_source):
+        # Optimization to not perform slicing when unnecessary
+        search_source_list = self if start_index == 0 else self[start_index:]
+        for index, node_value in enumerate(search_source_list):
             if value == node_value:
                 return index + start_index
         raise ValueError("Item not found")
 
 
 if __name__ == '__main__':
-    linked_list = LinkedList()
+    int_linked_list = LinkedList[int]()
+    str_linked_list = LinkedList[str]()
 
-    linked_list.insert(Node(1))
-    linked_list.insert(Node(2))
-    linked_list.insert(Node(3))
+    str_node = Node("1")
+    int_node = Node(1)
+    str_linked_list.insert(str_node)
+    int_linked_list.insert(int_node)
+    # str_linked_list.insert(int_node)  # editor highlights as error
 
-    print(linked_list)
+    int_linked_list.insert(Node(2))
+    int_linked_list.insert(Node(3))
 
-    linked_list.insert(Node(4), at_index=1)
+    assert list(int_linked_list) == [1, 2, 3]
 
-    print(linked_list)
+    int_linked_list.insert(Node(5), at_index=0)
+    int_linked_list.insert(Node(4), at_index=2)
+    assert list(int_linked_list) == [5, 1, 4, 2, 3]
+    assert int_linked_list.search(5) == 0
+    assert int_linked_list.search(4) == 2
 
-    linked_list.insert(Node(5), at_index=0)
-
-    print(linked_list)
-
-    print(linked_list.search(3))
-
-    linked_list.insert(Node(1), at_index=1)
-    linked_list.insert(Node(1), at_index=3)
-    linked_list.insert(Node(1), at_index=5)
-
-    print(linked_list)
-
-    print(linked_list.search(1))
-    print(linked_list.search(1, start_index=1))
-    print(linked_list.search(1, start_index=2))
-    print(linked_list.search(1, start_index=4))
-
-    # linked_list.insert(Node(6), at_index=10)
-
-    # print(linked_list)
+    int_linked_list.insert(Node(5))
+    assert int_linked_list.search(5, start_index=2) == len(int_linked_list) - 1, int_linked_list.search(5, start_index=2)
