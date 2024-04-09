@@ -4,16 +4,17 @@ from typing import TypeVar, Generic
 T = TypeVar("T")
 
 
-class AbstractQueue(ABC, Generic[T]):
+class EmptyQueueException(Exception):
+    pass
+
+
+class Queue(ABC, Generic[T]):
 
     @abstractmethod
-    def put(self, item: T):
+    def enqueue(self, item: T) -> None:
         pass
 
     @abstractmethod
-    def pop(self) -> T:
-        pass
-
-    @abstractmethod
-    def remove(self, item: T):
+    def dequeue(self) -> T:
+        """Should raise EmptyQueueException if queue is empty"""
         pass

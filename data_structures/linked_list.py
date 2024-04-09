@@ -19,10 +19,8 @@ class LinkedList(Generic[T]):
         self.size = 1 if head else 0
 
     def __iter__(self):
-        current = self.head
-        while current:
-            yield current.value
-            current = current.next_node
+        for node in self.node_iterator:
+            yield node.value
 
     @property
     def node_iterator(self) -> Iterator[Node[T]]:
@@ -59,6 +57,7 @@ class LinkedList(Generic[T]):
             raise ValueError("Invalid argument type.")
 
     def insert(self, node: Node[T], at_index: Optional[int] = None) -> None:
+        """O(n) complexity"""
 
         if at_index is not None and at_index > len(self):
             raise ValueError("Index out of range")
