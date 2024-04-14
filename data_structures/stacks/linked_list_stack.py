@@ -6,7 +6,7 @@ from typing import Generic
 class LinkedListStack(Stack, LinkedList, Generic[T]):
 
     def push(self, item: T) -> None:
-        """ O(n) compelxity"""
+        """ O(n) complexity"""
         self.insert(Node(item))
 
     def pop(self) -> T:
